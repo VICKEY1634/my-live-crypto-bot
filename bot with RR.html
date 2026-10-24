@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Crypto Scalper & Risk-Reward Visualiser</title>
+    <title>Pro Live Scalper - Risk:Reward Box & Voice Bot</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.0.1/dist/lightweight-charts.standalone.production.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background-color: #0b0e14; color: #d1d5db; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background-color: #0b0e14; color: #d1d5db; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
         .card { background: #131722; border: 1px solid #2a2e39; border-radius: 8px; }
         .pulse-buy { animation: pulseGreen 1.8s infinite; }
         .pulse-sell { animation: pulseRed 1.8s infinite; }
@@ -24,28 +24,30 @@
             <div class="bg-blue-600 p-2.5 rounded-lg"><i class="fa-solid fa-chart-area text-2xl text-white"></i></div>
             <div>
                 <h1 class="text-lg font-bold text-white flex items-center gap-2">
-                    Crypto Scalper & Risk-Reward Visualiser
-                    <span id="market-status" class="text-xs px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">● 24x7 LIVE</span>
+                    Crypto & Gold Live Scalper
+                    <span id="market-status" class="text-xs px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">● LIVE</span>
                 </h1>
-                <p class="text-xs text-gray-400">Auto Timeframe Detection • Risk:Reward Box Visualiser • Anti-Loss Filters</p>
+                <p class="text-xs text-gray-400">English Interface • Hindi Speech Alerts • Risk:Reward Overlay Box</p>
             </div>
         </div>
 
         <div class="flex items-center gap-3">
+            <!-- Asset Selector including Gold (XAU/USD) -->
             <select id="symbol-select" class="bg-gray-900 text-white text-xs rounded border border-gray-700 px-3 py-2 font-bold focus:outline-none">
                 <option value="BTCUSDT">BTC/USDT (24x7 Live)</option>
                 <option value="ETHUSDT">ETH/USDT (24x7 Live)</option>
                 <option value="SOLUSDT">SOL/USDT (24x7 Live)</option>
+                <option value="XAUUSDT">XAU/USD Gold (Weekend Closed)</option>
             </select>
 
             <div class="bg-gray-900 text-xs px-3 py-2 rounded border border-gray-700 flex items-center gap-1.5">
                 <i class="fa-solid fa-microchip text-amber-400"></i>
-                <span class="text-gray-400">स्कैनिंग टाइमफ्रेम:</span>
+                <span class="text-gray-400">Timeframe:</span>
                 <span id="active-tf-display" class="font-bold text-amber-400">Auto Scan...</span>
             </div>
 
             <button id="voice-btn" onclick="toggleVoice()" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded text-xs font-bold flex items-center gap-2 transition">
-                <i class="fa-solid fa-volume-high"></i> <span id="voice-txt">हिंदी आवाज़ चालू करें</span>
+                <i class="fa-solid fa-volume-high"></i> <span id="voice-txt">Enable Hindi Speech</span>
             </button>
         </div>
     </header>
@@ -54,15 +56,15 @@
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-3 flex-grow">
         
         <!-- Live Chart Window -->
-        <div class="lg:col-span-3 card p-3 flex flex-col">
+        <div class="lg:col-span-3 card p-3 flex flex-col relative">
             <div class="flex flex-wrap justify-between items-center mb-2 gap-2">
                 <div class="flex items-center gap-3">
                     <span id="chart-pair" class="text-base font-bold text-white">BTC/USDT</span>
-                    <span id="live-price" class="text-xl font-extrabold text-emerald-400">कनेक्ट हो रहा है...</span>
+                    <span id="live-price" class="text-xl font-extrabold text-emerald-400">Connecting...</span>
                 </div>
                 
                 <div class="flex items-center gap-2 text-xs bg-gray-900 p-1.5 rounded border border-gray-800">
-                    <span class="text-gray-400">रिस्क-रिवॉर्ड (R:R):</span>
+                    <span class="text-gray-400">Risk:Reward Ratio:</span>
                     <span id="rr-ratio-display" class="text-emerald-400 font-bold">1 : 2.5</span>
                 </div>
 
@@ -73,39 +75,39 @@
                 </div>
             </div>
             
-            <div id="chart-container" class="w-full h-[460px] rounded overflow-hidden"></div>
+            <div id="chart-container" class="w-full h-[460px] rounded overflow-hidden relative"></div>
         </div>
 
         <!-- Signal & Live Commentary Window -->
         <div class="lg:col-span-1 flex flex-col gap-3">
             
             <div id="signal-box" class="card p-3.5 text-center border-2 border-gray-800">
-                <div class="text-[10px] text-gray-400 uppercase tracking-widest mb-1">लाइव सिग्नल स्थिति</div>
-                <div id="signal-title" class="text-xl font-black text-gray-400 mb-1">सर्वश्रेष्ठ टाइमफ्रेम स्कैन हो रहा है...</div>
-                <div id="signal-desc" class="text-xs text-gray-400 mb-3">1M / 5M / 15M में सुरक्षित एंट्री की तलाश...</div>
+                <div class="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Signal Status</div>
+                <div id="signal-title" class="text-xl font-black text-gray-400 mb-1">Scanning Market...</div>
+                <div id="signal-desc" class="text-xs text-gray-400 mb-3">Analyzing 1M / 5M / 15M for optimal entry...</div>
 
                 <div class="grid grid-cols-2 gap-2 text-left text-xs bg-gray-900 p-2.5 rounded mb-2 border border-gray-800">
-                    <div>एंट्री (Entry): <br><span id="val-entry" class="font-bold text-white">-</span></div>
-                    <div>स्टॉप लॉस (SL): <br><span id="val-sl" class="font-bold text-rose-400">-</span></div>
-                    <div>Target 1 (50% Ex): <br><span id="val-tp1" class="font-bold text-emerald-400">-</span></div>
-                    <div>Target 2 (Full Ex): <br><span id="val-tp2" class="font-bold text-emerald-300">-</span></div>
+                    <div>Entry Price: <br><span id="val-entry" class="font-bold text-white">-</span></div>
+                    <div>Stop Loss (SL): <br><span id="val-sl" class="font-bold text-rose-400">-</span></div>
+                    <div>Target 1 (50% Exit): <br><span id="val-tp1" class="font-bold text-emerald-400">-</span></div>
+                    <div>Target 2 (Full Exit): <br><span id="val-tp2" class="font-bold text-emerald-300">-</span></div>
                 </div>
 
                 <div class="bg-gray-900 p-2 rounded text-left border-l-4 border-amber-500 text-xs">
                     <div class="text-[10px] text-amber-400 uppercase font-bold flex justify-between">
-                        <span>ट्रेलिंग स्टॉप लॉस स्थिति</span>
+                        <span>Trailing Stop Loss Status</span>
                     </div>
-                    <div id="tsl-status" class="text-gray-300 mt-0.5 text-[11px]">सुरक्षा के लिए SL फिक्स्ड है।</div>
+                    <div id="tsl-status" class="text-gray-300 mt-0.5 text-[11px]">SL fixed at initial safety level.</div>
                 </div>
             </div>
 
             <div class="card p-3 flex-grow flex flex-col">
                 <h3 class="text-xs font-bold text-gray-400 uppercase mb-2 flex items-center gap-2">
-                    <i class="fa-solid fa-bullhorn text-amber-400"></i> हिंदी ऑडियो गाइडेंस
+                    <i class="fa-solid fa-bullhorn text-amber-400"></i> Live Hindi Speech Commentary
                 </h3>
                 <div id="commentary-log" class="flex-grow overflow-y-auto space-y-2 text-xs max-h-[250px] pr-1">
                     <div class="bg-gray-900 p-2 rounded border-l-2 border-blue-500 text-gray-400">
-                        🤖 ऑटो-टाइमफ्रेम और रिस्क-रिवॉर्ड बॉट चालू हो गया है।
+                        🤖 Bot connected. Hindi speech voice enabled.
                     </div>
                 </div>
             </div>
@@ -193,7 +195,7 @@
                     avgGain = (avgGain * 13 + diff) / 14;
                     avgLoss = (avgLoss * 13) / 14;
                 } else {
-                    avgGain = (avgGain * 13 / 14);
+                    avgGain = (avgGain * 13) / 14;
                     avgLoss = (avgLoss * 13 - diff) / 14;
                 }
             }
@@ -207,66 +209,3 @@
             const closes = candles.map(c => c.close);
             const ema9 = calculateEMA(9, closes);
             const ema21 = calculateEMA(21, closes);
-            const rsiVal = calculateRSI(closes);
-
-            const fastData = candles.map((c, i) => ({ time: c.time, value: ema9[i] }));
-            const slowData = candles.map((c, i) => ({ time: c.time, value: ema21[i] }));
-
-            fastEmaLine.setData(fastData);
-            slowEmaLine.setData(slowData);
-
-            document.getElementById('ema-fast').innerText = `EMA 9: ${ema9[ema9.length - 1].toFixed(2)}`;
-            document.getElementById('ema-slow').innerText = `EMA 21: ${ema21[ema21.length - 1].toFixed(2)}`;
-            document.getElementById('rsi-val').innerText = `RSI: ${rsiVal.toFixed(1)}`;
-
-            evaluateSignal(ema9, ema21, rsiVal);
-        }
-
-        // Auto Select Best Timeframe to Prevent Losses
-        async function autoScanBestTimeframe() {
-            if (activePosition) return;
-
-            const timeframes = ['1m', '5m', '15m'];
-            let bestTF = currentTimeframe;
-            let maxStrength = 0;
-
-            for (let tf of timeframes) {
-                try {
-                    const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${currentSymbol}&interval=${tf}&limit=30`);
-                    const data = await res.json();
-                    const closes = data.map(d => parseFloat(d[4]));
-                    const ema9 = calculateEMA(9, closes);
-                    const ema21 = calculateEMA(21, closes);
-                    const rsi = calculateRSI(closes);
-                    const diff = Math.abs(ema9[ema9.length - 1] - ema21[ema21.length - 1]);
-
-                    // Loss-prevention Score
-                    let score = diff;
-                    if (rsi > 55 || rsi < 45) score *= 1.5;
-
-                    if (score > maxStrength) {
-                        maxStrength = score;
-                        bestTF = tf;
-                    }
-                } catch(e) {}
-            }
-
-            if (bestTF !== currentTimeframe) {
-                currentTimeframe = bestTF;
-                document.getElementById('active-tf-display').innerText = `${currentTimeframe.toUpperCase()} (Optimal)`;
-                speakAndLog(`स्मार्ट बॉट ने बेहतरीन टाइमफ्रेम ${currentTimeframe.toUpperCase()} का चयन किया है।`, 'amber');
-                fetchHistory().then(connectWebSocket);
-            }
-        }
-
-        function evaluateSignal(ema9, ema21, rsi) {
-            const len = ema9.length - 1;
-            const currentPrice = candles[candles.length - 1].close;
-
-            if (activePosition) {
-                managePosition(currentPrice);
-                return;
-            }
-
-            // High Probability Entry Filters (Anti-Loss)
-            const isBullish = ema9[len] > ema21[len] && ema9[len - 1] <= ema21[len - 1] && rsi > 50
