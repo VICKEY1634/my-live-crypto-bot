@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Live Scalper - Gold & Crypto Risk:Reward Bot</title>
+    <title>Pro Live Crypto & Gold Scalper</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.0.1/dist/lightweight-charts.standalone.production.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -24,15 +24,15 @@
             <div class="bg-amber-500 p-2.5 rounded-lg text-slate-900 font-bold"><i class="fa-solid fa-coins text-2xl"></i></div>
             <div>
                 <h1 class="text-lg font-bold text-white flex items-center gap-2">
-                    Gold (XAU/USD) & Crypto Scalper
+                    Gold & Crypto Multi-Asset Scalper
                     <span id="market-status" class="text-xs px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">● 24x7 LIVE</span>
                 </h1>
-                <p class="text-xs text-gray-400">English Chart Interface • Hindi Audio Alerts • Risk:Reward Overlay</p>
+                <p class="text-xs text-gray-400">Persistent Trades • Auto Timeframe • English UI with Hindi Voice</p>
             </div>
         </div>
 
         <div class="flex items-center gap-3">
-            <!-- Asset Selector including Gold (PAXG/USDT - XAU/USD) -->
+            <!-- Asset Selector including Gold (PAXGUSDT) -->
             <select id="symbol-select" class="bg-gray-900 text-amber-400 text-xs rounded border border-amber-500 px-3 py-2 font-bold focus:outline-none">
                 <option value="PAXGUSDT" selected>🥇 GOLD / XAUUSD (24x7 Live)</option>
                 <option value="BTCUSDT">₿ BTC/USDT (24x7 Live)</option>
@@ -107,7 +107,7 @@
                 </h3>
                 <div id="commentary-log" class="flex-grow overflow-y-auto space-y-2 text-xs max-h-[250px] pr-1">
                     <div class="bg-gray-900 p-2 rounded border-l-2 border-blue-500 text-gray-400">
-                        🤖 Bot connected to Gold (XAU/USD) live feed.
+                        🤖 Bot connected. Multi-asset position tracker active.
                     </div>
                 </div>
             </div>
@@ -122,8 +122,15 @@
         let currentSymbol = "PAXGUSDT"; // Gold Spot Equivalent
         let currentTimeframe = "1m";
         let candles = [];
-        let activePosition = null;
         let priceLines = [];
+
+        // Global position tracker across all assets
+        let positionsState = {
+            "PAXGUSDT": null,
+            "BTCUSDT": null,
+            "ETHUSDT": null,
+            "SOLUSDT": null
+        };
 
         function initChart() {
             const container = document.getElementById('chart-container');
@@ -165,6 +172,7 @@
 
                 candlestickSeries.setData(candles);
                 calculateIndicators();
+                restoreActiveUI();
             } catch (err) {
                 console.error("Fetch Error:", err);
             }
@@ -225,7 +233,7 @@
         }
 
         async function autoScanBestTimeframe() {
-            if (activePosition) return;
+            if (positionsState[currentSymbol]) return;
 
             const timeframes = ['1m', '5m', '15m'];
             let bestTF = currentTimeframe;
@@ -264,7 +272,7 @@
             const len = ema9.length - 1;
             const currentPrice = candles[candles.length - 1].close;
 
-            if (activePosition) {
+            if (positionsState[currentSymbol]) {
                 managePosition(currentPrice);
                 return;
             }
@@ -274,7 +282,7 @@
 
             if (isBullish) {
                 const atr = currentPrice * 0.0025;
-                activePosition = {
+                positionsState[currentSymbol] = {
                     type: 'BUY',
                     entry: currentPrice,
                     sl: currentPrice - atr,
@@ -286,7 +294,7 @@
                 triggerNewSignal('BUY');
             } else if (isBearish) {
                 const atr = currentPrice * 0.0025;
-                activePosition = {
+                positionsState[currentSymbol] = {
                     type: 'SELL',
                     entry: currentPrice,
                     sl: currentPrice + atr,
@@ -300,7 +308,9 @@
         }
 
         function managePosition(price) {
-            const pos = activePosition;
+            const pos = positionsState[currentSymbol];
+            if (!pos) return;
+
             const assetName = currentSymbol === "PAXGUSDT" ? "गोल्ड" : currentSymbol.replace("USDT", "");
             
             if (pos.type === 'BUY') {
@@ -359,22 +369,37 @@
         }
 
         function triggerNewSignal(type) {
+            const pos = positionsState[currentSymbol];
+            if (!pos) return;
+
+            restoreActiveUI();
+            
+            const assetName = currentSymbol === "PAXGUSDT" ? "गोल्ड" : currentSymbol.replace("USDT", "");
+            const hindiAction = type === 'BUY' ? 'बाय' : 'सेल';
+            speakAndLog(`नया ${hindiAction} सिग्नल मिला है ${assetName} पर! एंट्री ${pos.entry.toFixed(2)} पर लें। स्टॉप लॉस ${pos.sl.toFixed(2)} रखें।`, 'blue');
+        }
+
+        function restoreActiveUI() {
+            const pos = positionsState[currentSymbol];
             const box = document.getElementById('signal-box');
             const title = document.getElementById('signal-title');
             const desc = document.getElementById('signal-desc');
-            const pos = activePosition;
-            const assetName = currentSymbol === "PAXGUSDT" ? "गोल्ड" : currentSymbol.replace("USDT", "");
 
-            if (type === 'BUY') {
+            if (!pos) {
+                clearActiveSignal();
+                return;
+            }
+
+            if (pos.type === 'BUY') {
                 box.className = "card p-3.5 text-center border-2 border-emerald-500 pulse-buy";
                 title.className = "text-xl font-black text-emerald-400";
                 title.innerText = "BUY ENTRY CONFIRMED";
-                desc.innerText = `High probability bullish trend on ${currentTimeframe.toUpperCase()}`;
+                desc.innerText = `Active position on ${currentTimeframe.toUpperCase()}`;
             } else {
                 box.className = "card p-3.5 text-center border-2 border-rose-500 pulse-sell";
                 title.className = "text-xl font-black text-rose-400";
                 title.innerText = "SELL ENTRY CONFIRMED";
-                desc.innerText = `High probability bearish trend on ${currentTimeframe.toUpperCase()}`;
+                desc.innerText = `Active position on ${currentTimeframe.toUpperCase()}`;
             }
 
             document.getElementById('val-entry').innerText = `$${pos.entry.toFixed(2)}`;
@@ -383,13 +408,10 @@
             document.getElementById('val-tp2').innerText = `$${pos.tp2.toFixed(2)}`;
 
             updatePriceLines();
-            
-            const hindiAction = type === 'BUY' ? 'बाय' : 'सेल';
-            speakAndLog(`नया ${hindiAction} सिग्नल मिला है ${assetName} पर! एंट्री ${pos.entry.toFixed(2)} पर लें। स्टॉप लॉस ${pos.sl.toFixed(2)} रखें।`, 'blue');
         }
 
         function clearActiveSignal() {
-            activePosition = null;
+            positionsState[currentSymbol] = null;
             clearPriceLines();
             const box = document.getElementById('signal-box');
             box.className = "card p-3.5 text-center border-2 border-gray-800";
@@ -406,9 +428,8 @@
 
         function updatePriceLines() {
             clearPriceLines();
-            if (!activePosition) return;
-
-            const pos = activePosition;
+            const pos = positionsState[currentSymbol];
+            if (!pos) return;
 
             priceLines.push(candlestickSeries.createPriceLine({ 
                 price: pos.entry, color: '#3b82f6', lineWidth: 2, title: 'ENTRY' 
@@ -500,7 +521,6 @@
             currentSymbol = e.target.value;
             const pairName = currentSymbol === "PAXGUSDT" ? "GOLD (XAU/USD)" : currentSymbol.replace('USDT', '/USDT');
             document.getElementById('chart-pair').innerText = pairName;
-            clearActiveSignal();
             fetchHistory().then(connectWebSocket);
         });
 
