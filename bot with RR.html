@@ -27,7 +27,7 @@
                     Gold & Crypto Multi-Asset Scalper
                     <span id="market-status" class="text-xs px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">● 24x7 LIVE</span>
                 </h1>
-                <p class="text-xs text-gray-400">Persistent Trades • Auto Timeframe • English UI with Hindi Voice</p>
+                <p class="text-xs text-gray-400">Auto-Scale Price Chart • Persistent Trades • Hindi Voice Guidance</p>
             </div>
         </div>
 
@@ -107,7 +107,7 @@
                 </h3>
                 <div id="commentary-log" class="flex-grow overflow-y-auto space-y-2 text-xs max-h-[250px] pr-1">
                     <div class="bg-gray-900 p-2 rounded border-l-2 border-blue-500 text-gray-400">
-                        🤖 Bot connected. Multi-asset position tracker active.
+                        🤖 Bot connected. Auto Price Auto-Scale active.
                     </div>
                 </div>
             </div>
@@ -140,7 +140,7 @@
                 layout: { backgroundColor: '#131722', textColor: '#d1d5db' },
                 grid: { vertLines: { color: '#1e222d' }, horzLines: { color: '#1e222d' } },
                 crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-                rightPriceScale: { borderColor: '#2a2e39' },
+                rightPriceScale: { borderColor: '#2a2e39', autoScale: true },
                 timeScale: { borderColor: '#2a2e39', timeVisible: true, secondsVisible: true }
             });
 
@@ -171,6 +171,11 @@
                 }));
 
                 candlestickSeries.setData(candles);
+                
+                // AUTO SCALE & FIT CHART TO CURRENT PAIR PRICE (No manual scrolling needed)
+                chart.priceScale('right').applyOptions({ autoScale: true });
+                chart.timeScale().fitContent();
+
                 calculateIndicators();
                 restoreActiveUI();
             } catch (err) {
