@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Live Scalper - Risk:Reward Box & Voice Bot</title>
+    <title>Pro Live Scalper - Gold & Crypto Risk:Reward Bot</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.0.1/dist/lightweight-charts.standalone.production.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -21,23 +21,23 @@
     <!-- Header -->
     <header class="card p-3 mb-3 flex flex-wrap justify-between items-center gap-3">
         <div class="flex items-center space-x-3">
-            <div class="bg-blue-600 p-2.5 rounded-lg"><i class="fa-solid fa-chart-area text-2xl text-white"></i></div>
+            <div class="bg-amber-500 p-2.5 rounded-lg text-slate-900 font-bold"><i class="fa-solid fa-coins text-2xl"></i></div>
             <div>
                 <h1 class="text-lg font-bold text-white flex items-center gap-2">
-                    Crypto & Gold Live Scalper
-                    <span id="market-status" class="text-xs px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">● LIVE</span>
+                    Gold (XAU/USD) & Crypto Scalper
+                    <span id="market-status" class="text-xs px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">● 24x7 LIVE</span>
                 </h1>
-                <p class="text-xs text-gray-400">English Interface • Hindi Speech Alerts • Risk:Reward Overlay Box</p>
+                <p class="text-xs text-gray-400">English Chart Interface • Hindi Audio Alerts • Risk:Reward Overlay</p>
             </div>
         </div>
 
         <div class="flex items-center gap-3">
-            <!-- Asset Selector including Gold (XAU/USD) -->
-            <select id="symbol-select" class="bg-gray-900 text-white text-xs rounded border border-gray-700 px-3 py-2 font-bold focus:outline-none">
-                <option value="BTCUSDT">BTC/USDT (24x7 Live)</option>
-                <option value="ETHUSDT">ETH/USDT (24x7 Live)</option>
-                <option value="SOLUSDT">SOL/USDT (24x7 Live)</option>
-                <option value="XAUUSDT">XAU/USD Gold (Weekend Closed)</option>
+            <!-- Asset Selector including Gold (PAXG/USDT - XAU/USD) -->
+            <select id="symbol-select" class="bg-gray-900 text-amber-400 text-xs rounded border border-amber-500 px-3 py-2 font-bold focus:outline-none">
+                <option value="PAXGUSDT" selected>🥇 GOLD / XAUUSD (24x7 Live)</option>
+                <option value="BTCUSDT">₿ BTC/USDT (24x7 Live)</option>
+                <option value="ETHUSDT">Ξ ETH/USDT (24x7 Live)</option>
+                <option value="SOLUSDT">◎ SOL/USDT (24x7 Live)</option>
             </select>
 
             <div class="bg-gray-900 text-xs px-3 py-2 rounded border border-gray-700 flex items-center gap-1.5">
@@ -59,7 +59,7 @@
         <div class="lg:col-span-3 card p-3 flex flex-col relative">
             <div class="flex flex-wrap justify-between items-center mb-2 gap-2">
                 <div class="flex items-center gap-3">
-                    <span id="chart-pair" class="text-base font-bold text-white">BTC/USDT</span>
+                    <span id="chart-pair" class="text-base font-bold text-amber-400">GOLD (XAU/USD)</span>
                     <span id="live-price" class="text-xl font-extrabold text-emerald-400">Connecting...</span>
                 </div>
                 
@@ -84,7 +84,7 @@
             <div id="signal-box" class="card p-3.5 text-center border-2 border-gray-800">
                 <div class="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Signal Status</div>
                 <div id="signal-title" class="text-xl font-black text-gray-400 mb-1">Scanning Market...</div>
-                <div id="signal-desc" class="text-xs text-gray-400 mb-3">Analyzing 1M / 5M / 15M for optimal entry...</div>
+                <div id="signal-desc" class="text-xs text-gray-400 mb-3">Analyzing Gold & Crypto for optimal entry...</div>
 
                 <div class="grid grid-cols-2 gap-2 text-left text-xs bg-gray-900 p-2.5 rounded mb-2 border border-gray-800">
                     <div>Entry Price: <br><span id="val-entry" class="font-bold text-white">-</span></div>
@@ -107,7 +107,7 @@
                 </h3>
                 <div id="commentary-log" class="flex-grow overflow-y-auto space-y-2 text-xs max-h-[250px] pr-1">
                     <div class="bg-gray-900 p-2 rounded border-l-2 border-blue-500 text-gray-400">
-                        🤖 Bot connected. Hindi speech voice enabled.
+                        🤖 Bot connected to Gold (XAU/USD) live feed.
                     </div>
                 </div>
             </div>
@@ -119,7 +119,7 @@
         let chart, candlestickSeries, fastEmaLine, slowEmaLine;
         let ws = null;
         let voiceEnabled = false;
-        let currentSymbol = "BTCUSDT";
+        let currentSymbol = "PAXGUSDT"; // Gold Spot Equivalent
         let currentTimeframe = "1m";
         let candles = [];
         let activePosition = null;
@@ -209,3 +209,306 @@
             const closes = candles.map(c => c.close);
             const ema9 = calculateEMA(9, closes);
             const ema21 = calculateEMA(21, closes);
+            const rsiVal = calculateRSI(closes);
+
+            const fastData = candles.map((c, i) => ({ time: c.time, value: ema9[i] }));
+            const slowData = candles.map((c, i) => ({ time: c.time, value: ema21[i] }));
+
+            fastEmaLine.setData(fastData);
+            slowEmaLine.setData(slowData);
+
+            document.getElementById('ema-fast').innerText = `EMA 9: ${ema9[ema9.length - 1].toFixed(2)}`;
+            document.getElementById('ema-slow').innerText = `EMA 21: ${ema21[ema21.length - 1].toFixed(2)}`;
+            document.getElementById('rsi-val').innerText = `RSI: ${rsiVal.toFixed(1)}`;
+
+            evaluateSignal(ema9, ema21, rsiVal);
+        }
+
+        async function autoScanBestTimeframe() {
+            if (activePosition) return;
+
+            const timeframes = ['1m', '5m', '15m'];
+            let bestTF = currentTimeframe;
+            let maxStrength = 0;
+
+            for (let tf of timeframes) {
+                try {
+                    const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${currentSymbol}&interval=${tf}&limit=30`);
+                    const data = await res.json();
+                    const closes = data.map(d => parseFloat(d[4]));
+                    const ema9 = calculateEMA(9, closes);
+                    const ema21 = calculateEMA(21, closes);
+                    const rsi = calculateRSI(closes);
+                    const diff = Math.abs(ema9[ema9.length - 1] - ema21[ema21.length - 1]);
+
+                    let score = diff;
+                    if (rsi > 55 || rsi < 45) score *= 1.5;
+
+                    if (score > maxStrength) {
+                        maxStrength = score;
+                        bestTF = tf;
+                    }
+                } catch(e) {}
+            }
+
+            if (bestTF !== currentTimeframe) {
+                currentTimeframe = bestTF;
+                document.getElementById('active-tf-display').innerText = `${currentTimeframe.toUpperCase()} (Optimal)`;
+                const asset = currentSymbol === "PAXGUSDT" ? "गोल्ड" : currentSymbol.replace("USDT", "");
+                speakAndLog(`स्मार्ट बॉट ने ${asset} के लिए ${currentTimeframe.toUpperCase()} टाइमफ्रेम चुना है।`, 'amber');
+                fetchHistory().then(connectWebSocket);
+            }
+        }
+
+        function evaluateSignal(ema9, ema21, rsi) {
+            const len = ema9.length - 1;
+            const currentPrice = candles[candles.length - 1].close;
+
+            if (activePosition) {
+                managePosition(currentPrice);
+                return;
+            }
+
+            const isBullish = ema9[len] > ema21[len] && ema9[len - 1] <= ema21[len - 1] && rsi > 50;
+            const isBearish = ema9[len] < ema21[len] && ema9[len - 1] >= ema21[len - 1] && rsi < 50;
+
+            if (isBullish) {
+                const atr = currentPrice * 0.0025;
+                activePosition = {
+                    type: 'BUY',
+                    entry: currentPrice,
+                    sl: currentPrice - atr,
+                    tp1: currentPrice + (atr * 1.5),
+                    tp2: currentPrice + (atr * 3.0),
+                    tsl: currentPrice - atr,
+                    tp1Hit: false
+                };
+                triggerNewSignal('BUY');
+            } else if (isBearish) {
+                const atr = currentPrice * 0.0025;
+                activePosition = {
+                    type: 'SELL',
+                    entry: currentPrice,
+                    sl: currentPrice + atr,
+                    tp1: currentPrice - (atr * 1.5),
+                    tp2: currentPrice - (atr * 3.0),
+                    tsl: currentPrice + atr,
+                    tp1Hit: false
+                };
+                triggerNewSignal('SELL');
+            }
+        }
+
+        function managePosition(price) {
+            const pos = activePosition;
+            const assetName = currentSymbol === "PAXGUSDT" ? "गोल्ड" : currentSymbol.replace("USDT", "");
+            
+            if (pos.type === 'BUY') {
+                if (price <= pos.tsl) {
+                    speakAndLog(`स्टॉप लॉस हिट हो गया है ${assetName} पर $${price.toFixed(2)} पर। ट्रेड समाप्त।`, 'rose');
+                    clearActiveSignal();
+                    return;
+                }
+                if (!pos.tp1Hit && price >= pos.tp1) {
+                    pos.tp1Hit = true;
+                    pos.tsl = pos.entry;
+                    updatePriceLines();
+                    speakAndLog(`टारगेट 1 पूरा हो गया है! 50% प्रॉफिट बुक करें और स्टॉप लॉस को एंट्री प्राइस पर लाएं।`, 'emerald');
+                    document.getElementById('tsl-status').innerText = `TSL moved to Entry ($${pos.entry.toFixed(2)}) - Risk-Free!`;
+                }
+                if (pos.tp1Hit && price > pos.tp1) {
+                    const newTsl = price - (pos.entry * 0.0012);
+                    if (newTsl > pos.tsl) {
+                        pos.tsl = newTsl;
+                        updatePriceLines();
+                        document.getElementById('tsl-status').innerText = `Trailing SL: $${pos.tsl.toFixed(2)}`;
+                    }
+                }
+                if (price >= pos.tp2) {
+                    speakAndLog(`टारगेट 2 पूरा हुआ! पूरा प्रॉफिट बुक करें। शानदार ट्रेड!`, 'emerald');
+                    clearActiveSignal();
+                    return;
+                }
+            } else if (pos.type === 'SELL') {
+                if (price >= pos.tsl) {
+                    speakAndLog(`स्टॉप लॉस हिट हो गया है ${assetName} पर $${price.toFixed(2)} पर। ट्रेड समाप्त।`, 'rose');
+                    clearActiveSignal();
+                    return;
+                }
+                if (!pos.tp1Hit && price <= pos.tp1) {
+                    pos.tp1Hit = true;
+                    pos.tsl = pos.entry;
+                    updatePriceLines();
+                    speakAndLog(`टारगेट 1 पूरा हो गया है! 50% प्रॉफिट बुक करें और स्टॉप लॉस को एंट्री प्राइस पर लाएं।`, 'emerald');
+                    document.getElementById('tsl-status').innerText = `TSL moved to Entry ($${pos.entry.toFixed(2)}) - Risk-Free!`;
+                }
+                if (pos.tp1Hit && price < pos.tp1) {
+                    const newTsl = price + (pos.entry * 0.0012);
+                    if (newTsl < pos.tsl) {
+                        pos.tsl = newTsl;
+                        updatePriceLines();
+                        document.getElementById('tsl-status').innerText = `Trailing SL: $${pos.tsl.toFixed(2)}`;
+                    }
+                }
+                if (price <= pos.tp2) {
+                    speakAndLog(`टारगेट 2 पूरा हुआ! पूरा प्रॉफिट बुक करें। शानदार ट्रेड!`, 'emerald');
+                    clearActiveSignal();
+                    return;
+                }
+            }
+        }
+
+        function triggerNewSignal(type) {
+            const box = document.getElementById('signal-box');
+            const title = document.getElementById('signal-title');
+            const desc = document.getElementById('signal-desc');
+            const pos = activePosition;
+            const assetName = currentSymbol === "PAXGUSDT" ? "गोल्ड" : currentSymbol.replace("USDT", "");
+
+            if (type === 'BUY') {
+                box.className = "card p-3.5 text-center border-2 border-emerald-500 pulse-buy";
+                title.className = "text-xl font-black text-emerald-400";
+                title.innerText = "BUY ENTRY CONFIRMED";
+                desc.innerText = `High probability bullish trend on ${currentTimeframe.toUpperCase()}`;
+            } else {
+                box.className = "card p-3.5 text-center border-2 border-rose-500 pulse-sell";
+                title.className = "text-xl font-black text-rose-400";
+                title.innerText = "SELL ENTRY CONFIRMED";
+                desc.innerText = `High probability bearish trend on ${currentTimeframe.toUpperCase()}`;
+            }
+
+            document.getElementById('val-entry').innerText = `$${pos.entry.toFixed(2)}`;
+            document.getElementById('val-sl').innerText = `$${pos.sl.toFixed(2)}`;
+            document.getElementById('val-tp1').innerText = `$${pos.tp1.toFixed(2)}`;
+            document.getElementById('val-tp2').innerText = `$${pos.tp2.toFixed(2)}`;
+
+            updatePriceLines();
+            
+            const hindiAction = type === 'BUY' ? 'बाय' : 'सेल';
+            speakAndLog(`नया ${hindiAction} सिग्नल मिला है ${assetName} पर! एंट्री ${pos.entry.toFixed(2)} पर लें। स्टॉप लॉस ${pos.sl.toFixed(2)} रखें।`, 'blue');
+        }
+
+        function clearActiveSignal() {
+            activePosition = null;
+            clearPriceLines();
+            const box = document.getElementById('signal-box');
+            box.className = "card p-3.5 text-center border-2 border-gray-800";
+            document.getElementById('signal-title').className = "text-xl font-black text-gray-400";
+            document.getElementById('signal-title').innerText = "Scanning Market...";
+            document.getElementById('signal-desc').innerText = "Waiting for high probability entry...";
+            
+            document.getElementById('val-entry').innerText = "-";
+            document.getElementById('val-sl').innerText = "-";
+            document.getElementById('val-tp1').innerText = "-";
+            document.getElementById('val-tp2').innerText = "-";
+            document.getElementById('tsl-status').innerText = "SL fixed at initial safety level.";
+        }
+
+        function updatePriceLines() {
+            clearPriceLines();
+            if (!activePosition) return;
+
+            const pos = activePosition;
+
+            priceLines.push(candlestickSeries.createPriceLine({ 
+                price: pos.entry, color: '#3b82f6', lineWidth: 2, title: 'ENTRY' 
+            }));
+
+            priceLines.push(candlestickSeries.createPriceLine({ 
+                price: pos.tsl, color: '#ef4444', lineWidth: 2, title: 'TRAILING SL' 
+            }));
+
+            priceLines.push(candlestickSeries.createPriceLine({ 
+                price: pos.tp1, color: '#10b981', lineWidth: 1, title: 'TP1 (50% EXIT)' 
+            }));
+            priceLines.push(candlestickSeries.createPriceLine({ 
+                price: pos.tp2, color: '#059669', lineWidth: 2, title: 'TP2 (FULL EXIT)' 
+            }));
+        }
+
+        function clearPriceLines() {
+            priceLines.forEach(line => candlestickSeries.removePriceLine(line));
+            priceLines = [];
+        }
+
+        function speakAndLog(msg, color) {
+            if (voiceEnabled && 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utter = new SpeechSynthesisUtterance(msg);
+                utter.lang = 'hi-IN';
+                window.speechSynthesis.speak(utter);
+            }
+
+            const logBox = document.getElementById('commentary-log');
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const item = document.createElement('div');
+            item.className = `bg-gray-900 p-2 rounded border-l-2 border-${color}-500 text-gray-200 text-xs`;
+            item.innerHTML = `<span class="text-[10px] text-gray-500 font-mono">[${time}]</span> ${msg}`;
+            logBox.prepend(item);
+        }
+
+        function connectWebSocket() {
+            if (ws) ws.close();
+
+            const streamName = `${currentSymbol.toLowerCase()}@kline_${currentTimeframe}`;
+            ws = new WebSocket(`wss://stream.binance.com:9443/ws/${streamName}`);
+
+            ws.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                if (message.e === 'kline') {
+                    const k = message.k;
+                    const candle = {
+                        time: k.t / 1000,
+                        open: parseFloat(k.o),
+                        high: parseFloat(k.h),
+                        low: parseFloat(k.l),
+                        close: parseFloat(k.c)
+                    };
+
+                    const priceEl = document.getElementById('live-price');
+                    const lastClose = candles.length > 0 ? candles[candles.length - 1].close : candle.close;
+                    priceEl.innerText = `$${candle.close.toFixed(2)}`;
+                    priceEl.className = `text-xl font-extrabold ${candle.close >= lastClose ? 'text-emerald-400' : 'text-rose-400'}`;
+
+                    if (candles.length > 0 && candles[candles.length - 1].time === candle.time) {
+                        candles[candles.length - 1] = candle;
+                    } else {
+                        candles.push(candle);
+                    }
+
+                    candlestickSeries.update(candle);
+                    calculateIndicators();
+                }
+            };
+        }
+
+        function toggleVoice() {
+            voiceEnabled = !voiceEnabled;
+            const btn = document.getElementById('voice-btn');
+            const txt = document.getElementById('voice-txt');
+            if (voiceEnabled) {
+                btn.className = "bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded text-xs font-bold flex items-center gap-2 transition";
+                txt.innerText = "Hindi Speech Enabled";
+                speakAndLog("हिंदी वॉयस अलर्ट्स चालू कर दिए गए हैं।", "emerald");
+            } else {
+                btn.className = "bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded text-xs font-bold flex items-center gap-2 transition";
+                txt.innerText = "Enable Hindi Speech";
+            }
+        }
+
+        document.getElementById('symbol-select').addEventListener('change', (e) => {
+            currentSymbol = e.target.value;
+            const pairName = currentSymbol === "PAXGUSDT" ? "GOLD (XAU/USD)" : currentSymbol.replace('USDT', '/USDT');
+            document.getElementById('chart-pair').innerText = pairName;
+            clearActiveSignal();
+            fetchHistory().then(connectWebSocket);
+        });
+
+        window.onload = () => {
+            initChart();
+            fetchHistory().then(connectWebSocket);
+            setInterval(autoScanBestTimeframe, 30000);
+        };
+    </script>
+</body>
+</html>
