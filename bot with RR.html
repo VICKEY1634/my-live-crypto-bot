@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Live Scalping & Auto-Timeframe Bot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lightweight-charts@4.0.1/dist/lightweight-charts.standalone.production.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #0b0e14; color: #d1d5db; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card { background: #131722; border: 1px solid #2a2e39; border-radius: 8px; }
+        .pulse-buy { animation: pulseGreen 1.8s infinite; }
+        .pulse-sell { animation: pulseRed 1.8s infinite; }
+        @keyframes pulseGreen { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); } 70% { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+        @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+    </style>
+</head>
+<body class="p-2 md:p-5 min-h-screen flex flex-col">
+
+    <!-- Top Header Bar -->
+    <header class="card p-3 mb-3 flex flex-wrap justify-between items-center gap-3">
+        <div class="flex items-center space-x-3">
+            <div class="bg-blue-600 p-2.5 rounded-lg"><i class="fa-solid fa-bolt text-2xl text-white"></i></div>
+            <div>
+                <h1 class="text-lg font-bold text-white flex items-center gap-2">
+                    Crypto Scalper Pro (हिंदी वॉयस और ऑटो-टाइमफ्रेम)
+                    <span id="market-status" class="text-xs px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">● 24x7 LIVE</span>
+                </h1>
+                <p class="text-xs text-gray-400">1m Scalping • Trailing SL Visualiser • Auto Profitable TF Switcher</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <select id="symbol-select" class="bg-gray-900 text-white text-xs rounded border border-gray-700 px-3 py-2 font-bold focus:outline-none">
+                <option value="BTCUSDT">BTC/USDT (24x7 Live)</option>
+                <option value="ETHUSDT">ETH/USDT (24x7 Live)</option>
+                <option value="SOLUSDT">SOL/USDT (24x7 Live)</option>
+            </select>
+            
+            <div class="bg-gray-900 text-xs px-3 py-2 rounded border border-gray-700 flex items-center gap-1">
+                <span class="text-gray-400">टाइमफ्रेम:</span>
+                <span id="active-tf-display" class="font-bold text-amber-400">1m (Auto)</span>
+            </div>
+
+            <button id="voice-btn" onclick="toggleVoice()" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded text-xs font-bold flex items-center gap-2 transition">
+                <i class="fa-solid fa-volume-high"></i> <span id="voice-txt">हिंदी आवाज़ चालू करें</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-3 flex-grow">
+        
+        <!-- Left: Chart Window (3 Cols) -->
+        <div class="lg:col-span-3 card p-3 flex flex-col">
+            <div class="flex flex-wrap justify-between items-center mb-2 gap-2">
+                <div class="flex items-center gap-3">
+                    <span id="chart-pair" class="text-base font-bold text-white">BTC/USDT</span>
+                    <span id="live-price" class="text-xl font-extrabold text-emerald-400">$0.00</span>
+                </div>
+                
+                <!-- Auto Timeframe Profitability Meter -->
+                <div class="flex items-center gap-2 text-xs bg-gray-900 p-1.5 rounded border border-gray-800">
+                    <i class="fa-solid fa-brain text-amber-400"></i>
+                    <span class="text-gray-400">ऑटो बैकटेस्ट प्रॉफिट:</span>
+                    <span id="tf-backtest-info" class="text-amber-300 font-bold">1m (Win Rate: 68%)</span>
+                </div>
+
+                <div class="text-[11px] text-gray-400 flex items-center gap-3 font-mono">
+                    <span id="ema-fast" class="text-yellow-400">EMA 9: -</span>
+                    <span id="ema-slow" class="text-blue-400">EMA 21: -</span>
+                    <span id="rsi-val" class="text-purple-400">RSI: -</span>
+                </div>
+            </div>
+            
+            <!-- TradingView Lightweight Canvas Container -->
+            <div id="chart-container" class="w-full flex-grow min-h-[420px] rounded overflow-hidden"></div>
+        </div>
+
+        <!-- Right: Control & Hindi Commentary Panel (1 Col) -->
+        <div class="lg:col-span-1 flex flex-col gap-3">
+            
+            <!-- Signal Dashboard -->
+            <div id="signal-box" class="card p-3.5 text-center border-2 border-gray-800">
+                <div class="text-[10px] text-gray-400 uppercase tracking-widest mb-1">सिग्नल की स्थिति</div>
+                <div id="signal-title" class="text-xl font-black text-gray-400 mb-1">मार्केट स्कैन हो रहा है...</div>
+                <div id="signal-desc" class="text-xs text-gray-400 mb-3">1-मिनट स्कैल्पिंग सेटअप खोजा जा रहा है</div>
+
+                <div class="grid grid-cols-2 gap-2 text-left text-xs bg-gray-900 p-2.5 rounded mb-2 border border-gray-800">
+                    <div>एंट्री (Entry): <br><span id="val-entry" class="font-bold text-white">-</span></div>
+                    <div>स्टॉप लॉस (SL): <br><span id="val-sl" class="font-bold text-rose-400">-</span></div>
+                    <div>टारगेट 1 (50% Ex): <br><span id="val-tp1" class="font-bold text-emerald-400">-</span></div>
+                    <div>टारगेट 2 (Full Ex): <br><span id="val-tp2" class="font-bold text-emerald-300">-</span></div>
+                </div>
+
+                <!-- Live Trailing SL Box -->
+                <div class="bg-gray-900 p-2 rounded text-left border-l-4 border-amber-500 text-xs">
+                    <div class="text-[10px] text-amber-400 uppercase font-bold flex justify-between">
+                        <span>ट्रेलिंग स्टॉप लॉस स्थिति</span>
+                        <i class="fa-solid fa-arrows-up-down"></i>
+                    </div>
+                    <div id="tsl-status" class="text-gray-300 mt-0.5 text-[11px]">सुरक्षा के लिए SL फिक्स्ड है।</div>
+                </div>
+            </div>
+
+            <!-- Hindi Commentary Console -->
+            <div class="card p-3 flex-grow flex flex-col">
+                <h3 class="text-xs font-bold text-gray-400 uppercase mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-bullhorn text-amber-400"></i> हिंदी लाइव वॉयस कमेंट्री
+                </h3>
+                <div id="commentary-log" class="flex-grow overflow-y-auto space-y-2 text-xs max-h-[280px] pr-1 font-sans">
+                    <div class="bg-gray-900 p-2 rounded border-l-2 border-blue-500 text-gray-400">
+                        🤖 बोट शुरू हो गया है। हिंदी आवाज़ चालू करने के लिए ऊपर बटन दबाएं।
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Application Script Engine -->
+    <script>
+        let chart, candlestickSeries, fastEmaLine, slowEmaLine;
+        let ws = null;
+        let voiceEnabled = false;
+        let currentSymbol = "BTCUSDT";
+        let currentTimeframe = "1m"; // Default Scalping 1 Min
+        let candles = [];
+        
+        let activePosition = null;
