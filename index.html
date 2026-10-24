@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Live Crypto Trading Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lightweight-charts@4.0.1/dist/lightweight-charts.standalone.production.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #0d1117; color: #c9d1d9; font-family: 'Segoe UI', system-ui, sans-serif; }
+        .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; }
+        .pulse-buy { animation: pulseGreen 2s infinite; }
+        .pulse-sell { animation: pulseRed 2s infinite; }
+        @keyframes pulseGreen { 0% { box-shadow: 0 0 0 0 rgba(38, 166, 154, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(38, 166, 154, 0); } 100% { box-shadow: 0 0 0 0 rgba(38, 166, 154, 0); } }
+        @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(239, 83, 80, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 83, 80, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 83, 80, 0); } }
+    </style>
+</head>
+<body class="p-2 md:p-6 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="card p-4 mb-4 flex flex-wrap justify-between items-center gap-4">
+        <div class="flex items-center space-x-3">
+            <div class="bg-blue-600 p-2 rounded-lg"><i class="fa-solid fa-chart-line text-xl text-white"></i></div>
+            <div>
+                <h1 class="text-xl font-bold text-white flex items-center gap-2">
+                    Crypto Signal & Live Commentary Bot 
+                    <span id="market-status" class="text-xs px-2 py-0.5 rounded bg-green-900 text-green-300">● LIVE</span>
+                </h1>
+                <p class="text-xs text-gray-400">Multi-Timeframe Noise Filter • Live Trailing SL • Hindi Audio Commentary</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <select id="symbol-select" class="bg-gray-800 text-white text-sm rounded border border-gray-700 px-3 py-2 font-bold focus:outline-none">
+                <option value="BTCUSDT">BTC/USDT (Live 24x7)</option>
+                <option value="ETHUSDT">ETH/USDT (Live 24x7)</option>
+                <option value="SOLUSDT">SOL/USDT (Live 24x7)</option>
+            </select>
+            <select id="timeframe-select" class="bg-gray-800 text-white text-sm rounded border border-gray-700 px-3 py-2 focus:outline-none">
+                <option value="1m">1 Min (Scalp)</option>
+                <option value="5m" selected>5 Min (Standard)</option>
+                <option value="15m">15 Min (Intraday)</option>
+            </select>
+            <button id="voice-btn" onclick="toggleVoice()" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-2 transition">
+                <i class="fa-solid fa-volume-high"></i> <span id="voice-txt">Enable Audio</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 flex-grow">
+        
+        <!-- Left: Live Trading Chart (3 cols) -->
+        <div class="lg:col-span-3 card p-4 flex flex-col">
+            <div class="flex justify-between items-center mb-3">
+                <div class="flex items-center gap-4">
+                    <span id="chart-pair" class="text-lg font-bold text-white">BTC/USDT</span>
+                    <span id="live-price" class="text-2xl font-extrabold text-green-400">$0.00</span>
+                </div>
+                <div class="text-xs text-gray-400 flex items-center gap-2">
+                    <span id="ema-fast" class="text-yellow-400 font-semibold">EMA 9: -</span> |
+                    <span id="ema-slow" class="text-blue-400 font-semibold">EMA 21: -</span> |
+                    <span id="rsi-val" class="text-purple-400 font-semibold">RSI: -</span>
+                </div>
+            </div>
+            
+            <!-- Lightweight Chart Div -->
+            <div id="chart-container" class="w-full flex-grow min-h-[400px] rounded overflow-hidden"></div>
+        </div>
+
+        <!-- Right: Active Signal & Commentary Panel (1 col) -->
+        <div class="lg:col-span-1 flex flex-col gap-4">
+            
+            <!-- Signal Action Box -->
+            <div id="signal-box" class="card p-4 text-center border-2 border-gray-700">
+                <div class="text-xs text-gray-400 uppercase tracking-widest mb-1">Signal Status</div>
+                <div id="signal-title" class="text-2xl font-black text-gray-400 mb-2">SCANNING MARKET...</div>
+                <div id="signal-desc" class="text-xs text-gray-400 mb-4">Filtering noise & waiting for high-probability setup...</div>
+
+                <div class="grid grid-cols-2 gap-2 text-left text-xs bg-gray-900 p-3 rounded mb-3">
+                    <div>Entry: <span id="val-entry" class="font-bold text-white">-</span></div>
+                    <div>Stop Loss: <span id="val-sl" class="font-bold text-red-400">-</span></div>
+                    <div>TP1 (50%): <span id="val-tp1" class="font-bold text-green-400">-</span></div>
+                    <div>TP2 (Full): <span id="val-tp2" class="font-bold text-emerald-400">-</span></div>
+                </div>
+
+                <div class="bg-gray-800 p-2 rounded text-left border-l-4 border-amber-500">
+                    <div class="text-[10px] text-amber-400 uppercase font-bold">Trailing SL Guidance</div>
+                    <div id="tsl-status" class="text-xs text-gray-200 mt-0.5">SL currently fixed at initial safety level.</div>
+                </div>
+            </div>
+
+            <!-- Voice Commentary Logs -->
+            <div class="card p-4 flex-grow flex flex-col">
+                <h3 class="text-xs font-bold text-gray-400 uppercase mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-headset text-blue-400"></i> Live Audio Commentary Log
+                </h3>
+                <div id="commentary-log" class="flex-grow overflow-y-auto space-y-2 text-xs max-h-[300px] pr-1">
+                    <div class="bg-gray-900 p-2 rounded border-l-2 border-blue-500 text-gray-400">
+                        🤖 Bot initialized. Waiting for Trend confirmation...
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Script Section -->
+    <script>
+        let chart, candlestickSeries, fastEmaLine, slowEmaLine;
+        let ws = null;
+        let voiceEnabled = false;
+        let currentSymbol = "BTCUSDT";
+        let currentTimeframe = "5m";
+        let candles = [];
+        
+        let activePosition = null; // { type: 'BUY'/'SELL', entry, sl, tp1, tp2, tsl, tp1Hit: false }
+        let lastSignalTime = 0;
+        const COOLDOWN_PERIOD = 300000; // 5 minutes anti-whipsaw filter
+
+        let priceLines = [];
+
+        function initChart() {
+            const container = document.getElementById('chart-container');
+            container.innerHTML = '';
+
+            chart = LightweightCharts.createChart(container, {
+                layout: { backgroundColor: '#161b22', textColor: '#c9d1d9' },
+                grid: { vertLines: { color: '#21262d' }, horzLines: { color: '#21262d' } },
+                crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+                rightPriceScale: { borderColor: '#30363d' },
+                timeScale: { borderColor: '#30363d', timeVisible: true, secondsVisible: false }
+            });
+
+            candlestickSeries = chart.addCandlestickSeries({
+                upColor: '#26a69a', downColor: '#ef5350',
+                borderVisible: false, wickUpColor: '#26a69a', wickDownColor: '#ef5350'
+            });
+
+            fastEmaLine = chart.addLineSeries({ color: '#f1c40f', lineWidth: 1, title: 'EMA 9' });
+            slowEmaLine = chart.addLineSeries({ color: '#3498db', lineWidth: 1, title: 'EMA 21' });
+
+            window.addEventListener('resize', () => {
+                chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
+            });
+            chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
+        }
+
+        async function fetchHistory() {
+            try {
+                const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${currentSymbol}&interval=${currentTimeframe}&limit=100`);
+                const data = await res.json();
+                
+                candles = data.map(d => ({
+                    time: d[0] / 1000,
+                    open: parseFloat(d[1]),
+                    high: parseFloat(d[2]),
+                    low: parseFloat(d[3]),
+                    close: parseFloat(d[4])
+                }));
+
+                candlestickSeries.setData(candles);
+                calculateIndicators();
+            } catch (err) {
+                console.error("Error fetching klines:", err);
+            }
+        }
+
+        function calculateEMA(period, prices) {
+            let k = 2 / (period + 1);
+            let emaArray = [prices[0]];
+            for (let i = 1; i < prices.length; i++) {
+                emaArray.push(prices[i] * k + emaArray[i - 1] * (1 - k));
+            }
+            return emaArray;
+        }
+
+        function calculateRSI(prices, period = 14) {
+            let gains = 0, losses = 0;
+            for (let i = 1; i <= period; i++) {
+                let diff = prices[i] - prices[i - 1];
+                if (diff >= 0) gains += diff;
+                else losses -= diff;
+            }
+            let avgGain = gains / period;
+            let avgLoss = losses / period;
+            
+            for (let i = period + 1; i < prices.length; i++) {
+                let diff = prices[i] - prices[i - 1];
+                if (diff >= 0) {
+                    avgGain = (avgGain * 13 + diff) / 14;
+                    avgLoss = (avgLoss * 13) / 14;
+                } else {
+                    avgGain = (avgGain * 13) / 14;
+                    avgLoss = (avgLoss * 13 - diff) / 14;
+                }
+            }
+            let rs = avgGain / (avgLoss || 1);
+            return 100 - (100 / (1 + rs));
+        }
+
+        function calculateIndicators() {
+            if (candles.length < 30) return;
+
+            const closes = candles.map(c => c.close);
+            const ema9 = calculateEMA(9, closes);
+            const ema21 = calculateEMA(21, closes);
+            const rsiVal = calculateRSI(closes);
+
+            const fastData = candles.map((c, i) => ({ time: c.time, value: ema9[i] }));
+            const slowData = candles.map((c, i) => ({ time: c.time, value: ema21[i] }));
+
+            fastEmaLine.setData(fastData);
+            slowEmaLine.setData(slowData);
+
+            document.getElementById('ema-fast').innerText = `EMA 9: ${ema9[ema9.length - 1].toFixed(2)}`;
+            document.getElementById('ema-slow').innerText = `EMA 21: ${ema21[ema21.length - 1].toFixed(2)}`;
+            document.getElementById('rsi-val').innerText = `RSI: ${rsiVal.toFixed(1)}`;
+
+            evaluateSignal(ema9, ema21, rsiVal);
+        }
+
+        function evaluateSignal(ema9, ema21, rsi) {
+            const len = ema9.length - 1;
+            const currentPrice = candles[candles.length - 1].close;
+            const now = Date.now();
+
+            // Active Position Management (Trailing SL & Exits)
+            if (activePosition) {
+                managePosition(currentPrice);
+                return;
+            }
+
+            // Anti-Whipsaw Filter Check
+            if (now - lastSignalTime < COOLDOWN_PERIOD) return;
+
+            // Strategy Rules (Crossover + RSI Filter)
+            const isBullish = ema9[len] > ema21[len] && ema9[len - 1] <= ema21[len - 1] && rsi > 45 && rsi < 70;
+            const isBearish = ema9[len] < ema21[len] && ema9[len - 1] >= ema21[len - 1] && rsi < 55 && rsi > 30;
+
+            if (isBullish) {
+                const atr = currentPrice * 0.004; // 0.4% approx ATR
+                activePosition = {
+                    type: 'BUY',
+                    entry: currentPrice,
+                    sl: currentPrice - (atr * 1.5),
+                    tp1: currentPrice + (atr * 1.5),
+                    tp2: currentPrice + (atr * 3.0),
+                    tsl: currentPrice - (atr * 1.5),
+                    tp1Hit: false
+                };
+                lastSignalTime = now;
+                triggerNewSignal('BUY');
+            } else if (isBearish) {
+                const atr = currentPrice * 0.004;
+                activePosition = {
+                    type: 'SELL',
+                    entry: currentPrice,
+                    sl: currentPrice + (atr * 1.5),
+                    tp1: currentPrice - (atr * 1.5),
+                    tp2: currentPrice - (atr * 3.0),
+                    tsl: currentPrice + (atr * 1.5),
+                    tp1Hit: false
+                };
+                lastSignalTime = now;
+                triggerNewSignal('SELL');
+            }
+        }
+
+        function managePosition(price) {
+            const pos = activePosition;
+            
+            if (pos.type === 'BUY') {
+                // Check SL Hit
+                if (price <= pos.tsl) {
+                    speakAndLog(`Stop Loss Hit at ${price.toFixed(2)}. Position Closed.`, 'red');
+                    clearActiveSignal();
+                    return;
+                }
+                // Check TP1 Hit (Partial Exit 50%)
+                if (!pos.tp1Hit && price >= pos.tp1) {
+                    pos.tp1Hit = true;
+                    pos.tsl = pos.entry; // Move SL to Entry (Risk Free)
+                    updatePriceLines();
+                    speakAndLog(`Target 1 achieved! Book 50% profit now. Trailing Stop Loss moved to Entry ${pos.entry.toFixed(2)}.`, 'green');
+                    document.getElementById('tsl-status').innerText = `TSL Shifted to Entry ($${pos.entry.toFixed(2)}) - Risk-Free Trade!`;
+                }
+                // Dynamic Trailing SL as Price Moves Higher
+                if (pos.tp1Hit && price > pos.tp1) {
+                    const newTsl = price - (pos.entry * 0.003);
+                    if (newTsl > pos.tsl) {
+                        pos.tsl = newTsl;
+                        updatePriceLines();
+                        document.getElementById('tsl-status').innerText = `Trailing SL active: $${pos.tsl.toFixed(2)}`;
+                    }
+                }
+                // Check TP2 Hit (Full Exit)
+                if (price >= pos.tp2) {
+                    speakAndLog(`Target 2 Achieved! Close remaining 50% position now. Excellent Trade!`, 'emerald');
+                    clearActiveSignal();
+                    return;
+                }
+            } else if (pos.type === 'SELL') {
+                // Check SL Hit
+                if (price >= pos.tsl) {
+                    speakAndLog(`Stop Loss Hit at ${price.toFixed(2)}. Position Closed.`, 'red');
+                    clearActiveSignal();
+                    return;
+                }
+                // Check TP1 Hit
+                if (!pos.tp1Hit && price <= pos.tp1) {
+                    pos.tp1Hit = true;
+                    pos.tsl = pos.entry;
+                    updatePriceLines();
+                    speakAndLog(`Target 1 achieved! Book 50% profit now. Trailing Stop Loss moved to Entry ${pos.entry.toFixed(2)}.`, 'green');
+                    document.getElementById('tsl-status').innerText = `TSL Shifted to Entry ($${pos.entry.toFixed(2)}) - Risk-Free Trade!`;
+                }
+                // Dynamic Trailing SL Lower
+                if (pos.tp1Hit && price < pos.tp1) {
+                    const newTsl = price + (pos.entry * 0.003);
+                    if (newTsl < pos.tsl) {
+                        pos.tsl = newTsl;
+                        updatePriceLines();
+                        document.getElementById('tsl-status').innerText = `Trailing SL active: $${pos.tsl.toFixed(2)}`;
+                    }
+                }
+                // Check TP2 Hit
+                if (price <= pos.tp2) {
+                    speakAndLog(`Target 2 Achieved! Close remaining 50% position now. Excellent Trade!`, 'emerald');
+                    clearActiveSignal();
+                    return;
+                }
+            }
+        }
+
+        function triggerNewSignal(type) {
+            const box = document.getElementById('signal-box');
+            const title = document.getElementById('signal-title');
+            const desc = document.getElementById('signal-desc');
+            const pos = activePosition;
+
+            if (type === 'BUY') {
+                box.className = "card p-4 text-center border-2 border-emerald-500 pulse-buy";
+                title.className = "text-2xl font-black text-emerald-400";
+                title.innerText = "BUY ENTRY CONFIRMED";
+                desc.innerText = "Confirmed Trend Momentum with Noise Filter.";
+            } else {
+                box.className = "card p-4 text-center border-2 border-rose-500 pulse-sell";
+                title.className = "text-2xl font-black text-rose-400";
+                title.innerText = "SELL ENTRY CONFIRMED";
+                desc.innerText = "Confirmed Downward Momentum with Noise Filter.";
+            }
+
+            document.getElementById('val-entry').innerText = `$${pos.entry.toFixed(2)}`;
+            document.getElementById('val-sl').innerText = `$${pos.sl.toFixed(2)}`;
+            document.getElementById('val-tp1').innerText = `$${pos.tp1.toFixed(2)}`;
+            document.getElementById('val-tp2').innerText = `$${pos.tp2.toFixed(2)}`;
+
+            updatePriceLines();
+
+            speakAndLog(`New ${type} Signal confirmed on ${currentSymbol}. Entry at ${pos.entry.toFixed(2)}. Stop loss set at ${pos.sl.toFixed(2)}. Target 1 is ${pos.tp1.toFixed(2)}.`, 'blue');
+        }
+
+        function clearActiveSignal() {
+            activePosition = null;
+            clearPriceLines();
+            const box = document.getElementById('signal-box');
+            box.className = "card p-4 text-center border-2 border-gray-700";
+            document.getElementById('signal-title').className = "text-2xl font-black text-gray-400";
+            document.getElementById('signal-title').innerText = "SCANNING MARKET...";
+            document.getElementById('signal-desc').innerText = "Waiting for high probability setup...";
+            
+            document.getElementById('val-entry').innerText = "-";
+            document.getElementById('val-sl').innerText = "-";
+            document.getElementById('val-tp1').innerText = "-";
+            document.getElementById('val-tp2').innerText = "-";
+            document.getElementById('tsl-status').innerText = "SL currently fixed at initial safety level.";
+        }
+
+        function updatePriceLines() {
+            clearPriceLines();
+            if (!activePosition) return;
+
+            const pos = activePosition;
+            priceLines.push(candlestickSeries.createPriceLine({ price: pos.entry, color: '#3b82f6', lineWidth: 2, title: 'ENTRY' }));
+            priceLines.push(candlestickSeries.createPriceLine({ price: pos.tsl, color: '#ef4444', lineWidth: 2, title: 'TSL / SL' }));
+            priceLines.push(candlestickSeries.createPriceLine({ price: pos.tp1, color: '#10b981', lineWidth: 1, title: 'TP1 (50%)' }));
+            priceLines.push(candlestickSeries.createPriceLine({ price: pos.tp2, color: '#059669', lineWidth: 2, title: 'TP2 (FULL)' }));
+        }
+
+        function clearPriceLines() {
+            priceLines.forEach(line => candlestickSeries.removePriceLine(line));
+            priceLines = [];
+        }
+
+        function speakAndLog(msg, color) {
+            // Audio Speech Synthesis
+            if (voiceEnabled && 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utter = new SpeechSynthesisUtterance(msg);
+                utter.rate = 0.95;
+                window.speechSynthesis.speak(utter);
+            }
+
+            // UI Log
+            const logBox = document.getElementById('commentary-log');
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const item = document.createElement('div');
+            item.className = `bg-gray-900 p-2 rounded border-l-2 border-${color}-500 text-gray-200`;
+            item.innerHTML = `<span class="text-[10px] text-gray-500 font-mono">[${time}]</span> ${msg}`;
+            logBox.prepend(item);
+        }
+
+        function connectWebSocket() {
+            if (ws) ws.close();
+
+            const streamName = `${currentSymbol.toLowerCase()}@kline_${currentTimeframe}`;
+            ws = new WebSocket(`wss://stream.binance.com:9443/ws/${streamName}`);
+
+            ws.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                if (message.e === 'kline') {
+                    const k = message.k;
+                    const candle = {
+                        time: k.t / 1000,
+                        open: parseFloat(k.o),
+                        high: parseFloat(k.h),
+                        low: parseFloat(k.l),
+                        close: parseFloat(k.c)
+                    };
+
+                    const priceEl = document.getElementById('live-price');
+                    const lastClose = candles.length > 0 ? candles[candles.length - 1].close : candle.close;
+                    priceEl.innerText = `$${candle.close.toFixed(2)}`;
+                    priceEl.className = `text-2xl font-extrabold ${candle.close >= lastClose ? 'text-green-400' : 'text-red-400'}`;
+
+                    if (candles.length > 0 && candles[candles.length - 1].time === candle.time) {
+                        candles[candles.length - 1] = candle;
+                    } else {
+                        candles.push(candle);
+                    }
+
+                    candlestickSeries.update(candle);
+                    calculateIndicators();
+                }
+            };
+        }
+
+        function toggleVoice() {
+            voiceEnabled = !voiceEnabled;
+            const btn = document.getElementById('voice-btn');
+            const txt = document.getElementById('voice-txt');
+            if (voiceEnabled) {
+                btn.className = "bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-2 transition";
+                txt.innerText = "Audio Enabled";
+                speakAndLog("Audio Commentary Activated.", "green");
+            } else {
+                btn.className = "bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-2 transition";
+                txt.innerText = "Enable Audio";
+            }
+        }
+
+        document.getElementById('symbol-select').addEventListener('change', (e) => {
+            currentSymbol = e.target.value;
+            document.getElementById('chart-pair').innerText = currentSymbol.replace('USDT', '/USDT');
+            clearActiveSignal();
+            fetchHistory().then(connectWebSocket);
+        });
+
+        document.getElementById('timeframe-select').addEventListener('change', (e) => {
+            currentTimeframe = e.target.value;
+            clearActiveSignal();
+            fetchHistory().then(connectWebSocket);
+        });
+
+        // Initialize App
+        window.onload = () => {
+            initChart();
+            fetchHistory().then(connectWebSocket);
+        };
+    </script>
+</body>
+</html>
