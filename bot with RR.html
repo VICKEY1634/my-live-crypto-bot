@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Live Crypto Scalper</title>
+    <title>Pro Crypto Scalper & Risk-Reward Visualiser</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.0.1/dist/lightweight-charts.standalone.production.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background-color: #0b0e14; color: #d1d5db; font-family: system-ui, -apple-system, sans-serif; }
+        body { background-color: #0b0e14; color: #d1d5db; font-family: 'Segoe UI', system-ui, sans-serif; }
         .card { background: #131722; border: 1px solid #2a2e39; border-radius: 8px; }
         .pulse-buy { animation: pulseGreen 1.8s infinite; }
         .pulse-sell { animation: pulseRed 1.8s infinite; }
@@ -21,13 +21,13 @@
     <!-- Header -->
     <header class="card p-3 mb-3 flex flex-wrap justify-between items-center gap-3">
         <div class="flex items-center space-x-3">
-            <div class="bg-blue-600 p-2.5 rounded-lg"><i class="fa-solid fa-bolt text-2xl text-white"></i></div>
+            <div class="bg-blue-600 p-2.5 rounded-lg"><i class="fa-solid fa-chart-area text-2xl text-white"></i></div>
             <div>
                 <h1 class="text-lg font-bold text-white flex items-center gap-2">
-                    Crypto Scalper Pro (हिंदी वॉयस & Live Chart)
+                    Crypto Scalper & Risk-Reward Visualiser
                     <span id="market-status" class="text-xs px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">● 24x7 LIVE</span>
                 </h1>
-                <p class="text-xs text-gray-400">1m Scalping • Trailing SL Visualiser • Live Voice Guidance</p>
+                <p class="text-xs text-gray-400">Auto Timeframe Detection • Risk:Reward Box Visualiser • Anti-Loss Filters</p>
             </div>
         </div>
 
@@ -38,45 +38,57 @@
                 <option value="SOLUSDT">SOL/USDT (24x7 Live)</option>
             </select>
 
+            <div class="bg-gray-900 text-xs px-3 py-2 rounded border border-gray-700 flex items-center gap-1.5">
+                <i class="fa-solid fa-microchip text-amber-400"></i>
+                <span class="text-gray-400">स्कैनिंग टाइमफ्रेम:</span>
+                <span id="active-tf-display" class="font-bold text-amber-400">Auto Scan...</span>
+            </div>
+
             <button id="voice-btn" onclick="toggleVoice()" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded text-xs font-bold flex items-center gap-2 transition">
                 <i class="fa-solid fa-volume-high"></i> <span id="voice-txt">हिंदी आवाज़ चालू करें</span>
             </button>
         </div>
     </header>
 
-    <!-- Main Grid -->
+    <!-- Main Content Area -->
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-3 flex-grow">
         
-        <!-- Chart Section -->
+        <!-- Live Chart Window -->
         <div class="lg:col-span-3 card p-3 flex flex-col">
-            <div class="flex justify-between items-center mb-2">
+            <div class="flex flex-wrap justify-between items-center mb-2 gap-2">
                 <div class="flex items-center gap-3">
                     <span id="chart-pair" class="text-base font-bold text-white">BTC/USDT</span>
-                    <span id="live-price" class="text-xl font-extrabold text-emerald-400">Loading...</span>
+                    <span id="live-price" class="text-xl font-extrabold text-emerald-400">कनेक्ट हो रहा है...</span>
                 </div>
-                <div class="text-xs text-gray-400 font-mono flex items-center gap-3">
+                
+                <div class="flex items-center gap-2 text-xs bg-gray-900 p-1.5 rounded border border-gray-800">
+                    <span class="text-gray-400">रिस्क-रिवॉर्ड (R:R):</span>
+                    <span id="rr-ratio-display" class="text-emerald-400 font-bold">1 : 2.5</span>
+                </div>
+
+                <div class="text-[11px] text-gray-400 flex items-center gap-3 font-mono">
                     <span id="ema-fast" class="text-yellow-400">EMA 9: -</span>
                     <span id="ema-slow" class="text-blue-400">EMA 21: -</span>
                     <span id="rsi-val" class="text-purple-400">RSI: -</span>
                 </div>
             </div>
             
-            <div id="chart-container" class="w-full h-[450px] rounded overflow-hidden"></div>
+            <div id="chart-container" class="w-full h-[460px] rounded overflow-hidden"></div>
         </div>
 
-        <!-- Signal & Voice Panel -->
+        <!-- Signal & Live Commentary Window -->
         <div class="lg:col-span-1 flex flex-col gap-3">
             
             <div id="signal-box" class="card p-3.5 text-center border-2 border-gray-800">
-                <div class="text-[10px] text-gray-400 uppercase tracking-widest mb-1">सिग्नल की स्थिति</div>
-                <div id="signal-title" class="text-xl font-black text-gray-400 mb-1">मार्केट स्कैन हो रहा है...</div>
-                <div id="signal-desc" class="text-xs text-gray-400 mb-3">1-मिनट स्कैल्पिंग सेटअप खोजा जा रहा है</div>
+                <div class="text-[10px] text-gray-400 uppercase tracking-widest mb-1">लाइव सिग्नल स्थिति</div>
+                <div id="signal-title" class="text-xl font-black text-gray-400 mb-1">सर्वश्रेष्ठ टाइमफ्रेम स्कैन हो रहा है...</div>
+                <div id="signal-desc" class="text-xs text-gray-400 mb-3">1M / 5M / 15M में सुरक्षित एंट्री की तलाश...</div>
 
                 <div class="grid grid-cols-2 gap-2 text-left text-xs bg-gray-900 p-2.5 rounded mb-2 border border-gray-800">
                     <div>एंट्री (Entry): <br><span id="val-entry" class="font-bold text-white">-</span></div>
                     <div>स्टॉप लॉस (SL): <br><span id="val-sl" class="font-bold text-rose-400">-</span></div>
-                    <div>टारगेट 1 (50% Ex): <br><span id="val-tp1" class="font-bold text-emerald-400">-</span></div>
-                    <div>टारगेट 2 (Full Ex): <br><span id="val-tp2" class="font-bold text-emerald-300">-</span></div>
+                    <div>Target 1 (50% Ex): <br><span id="val-tp1" class="font-bold text-emerald-400">-</span></div>
+                    <div>Target 2 (Full Ex): <br><span id="val-tp2" class="font-bold text-emerald-300">-</span></div>
                 </div>
 
                 <div class="bg-gray-900 p-2 rounded text-left border-l-4 border-amber-500 text-xs">
@@ -89,11 +101,11 @@
 
             <div class="card p-3 flex-grow flex flex-col">
                 <h3 class="text-xs font-bold text-gray-400 uppercase mb-2 flex items-center gap-2">
-                    <i class="fa-solid fa-bullhorn text-amber-400"></i> हिंदी लाइव वॉयस कमेंट्री
+                    <i class="fa-solid fa-bullhorn text-amber-400"></i> हिंदी ऑडियो गाइडेंस
                 </h3>
                 <div id="commentary-log" class="flex-grow overflow-y-auto space-y-2 text-xs max-h-[250px] pr-1">
                     <div class="bg-gray-900 p-2 rounded border-l-2 border-blue-500 text-gray-400">
-                        🤖 बोट कनेक्ट हो रहा है...
+                        🤖 ऑटो-टाइमफ्रेम और रिस्क-रिवॉर्ड बॉट चालू हो गया है।
                     </div>
                 </div>
             </div>
@@ -181,7 +193,7 @@
                     avgGain = (avgGain * 13 + diff) / 14;
                     avgLoss = (avgLoss * 13) / 14;
                 } else {
-                    avgGain = (avgGain * 13) / 14;
+                    avgGain = (avgGain * 13 / 14);
                     avgLoss = (avgLoss * 13 - diff) / 14;
                 }
             }
@@ -210,6 +222,43 @@
             evaluateSignal(ema9, ema21, rsiVal);
         }
 
+        // Auto Select Best Timeframe to Prevent Losses
+        async function autoScanBestTimeframe() {
+            if (activePosition) return;
+
+            const timeframes = ['1m', '5m', '15m'];
+            let bestTF = currentTimeframe;
+            let maxStrength = 0;
+
+            for (let tf of timeframes) {
+                try {
+                    const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${currentSymbol}&interval=${tf}&limit=30`);
+                    const data = await res.json();
+                    const closes = data.map(d => parseFloat(d[4]));
+                    const ema9 = calculateEMA(9, closes);
+                    const ema21 = calculateEMA(21, closes);
+                    const rsi = calculateRSI(closes);
+                    const diff = Math.abs(ema9[ema9.length - 1] - ema21[ema21.length - 1]);
+
+                    // Loss-prevention Score
+                    let score = diff;
+                    if (rsi > 55 || rsi < 45) score *= 1.5;
+
+                    if (score > maxStrength) {
+                        maxStrength = score;
+                        bestTF = tf;
+                    }
+                } catch(e) {}
+            }
+
+            if (bestTF !== currentTimeframe) {
+                currentTimeframe = bestTF;
+                document.getElementById('active-tf-display').innerText = `${currentTimeframe.toUpperCase()} (Optimal)`;
+                speakAndLog(`स्मार्ट बॉट ने बेहतरीन टाइमफ्रेम ${currentTimeframe.toUpperCase()} का चयन किया है।`, 'amber');
+                fetchHistory().then(connectWebSocket);
+            }
+        }
+
         function evaluateSignal(ema9, ema21, rsi) {
             const len = ema9.length - 1;
             const currentPrice = candles[candles.length - 1].close;
@@ -219,225 +268,5 @@
                 return;
             }
 
-            const isBullish = ema9[len] > ema21[len] && ema9[len - 1] <= ema21[len - 1] && rsi > 45;
-            const isBearish = ema9[len] < ema21[len] && ema9[len - 1] >= ema21[len - 1] && rsi < 55;
-
-            if (isBullish) {
-                const atr = currentPrice * 0.0025;
-                activePosition = {
-                    type: 'BUY',
-                    entry: currentPrice,
-                    sl: currentPrice - atr,
-                    tp1: currentPrice + (atr * 1.2),
-                    tp2: currentPrice + (atr * 2.5),
-                    tsl: currentPrice - atr,
-                    tp1Hit: false
-                };
-                triggerNewSignal('BUY');
-            } else if (isBearish) {
-                const atr = currentPrice * 0.0025;
-                activePosition = {
-                    type: 'SELL',
-                    entry: currentPrice,
-                    sl: currentPrice + atr,
-                    tp1: currentPrice - (atr * 1.2),
-                    tp2: currentPrice - (atr * 2.5),
-                    tsl: currentPrice + atr,
-                    tp1Hit: false
-                };
-                triggerNewSignal('SELL');
-            }
-        }
-
-        function managePosition(price) {
-            const pos = activePosition;
-            
-            if (pos.type === 'BUY') {
-                if (price <= pos.tsl) {
-                    speakAndLog(`स्टॉप लॉस हिट हो गया है ${price.toFixed(2)} पर।`, 'rose');
-                    clearActiveSignal();
-                    return;
-                }
-                if (!pos.tp1Hit && price >= pos.tp1) {
-                    pos.tp1Hit = true;
-                    pos.tsl = pos.entry;
-                    updatePriceLines();
-                    speakAndLog(`टारगेट 1 पूरा हो गया है! 50% प्रॉफिट बुक करें।`, 'emerald');
-                    document.getElementById('tsl-status').innerText = `TSL एंट्री ($${pos.entry.toFixed(2)}) पर शिफ्ट`;
-                }
-                if (pos.tp1Hit && price > pos.tp1) {
-                    const newTsl = price - (pos.entry * 0.0015);
-                    if (newTsl > pos.tsl) {
-                        pos.tsl = newTsl;
-                        updatePriceLines();
-                        document.getElementById('tsl-status').innerText = `लाइव ट्रेलिंग SL: $${pos.tsl.toFixed(2)}`;
-                    }
-                }
-                if (price >= pos.tp2) {
-                    speakAndLog(`टारगेट 2 पूरा हुआ! पूरा प्रॉफिट बुक करें।`, 'emerald');
-                    clearActiveSignal();
-                    return;
-                }
-            } else if (pos.type === 'SELL') {
-                if (price >= pos.tsl) {
-                    speakAndLog(`स्टॉप लॉस हिट हो गया है ${price.toFixed(2)} पर।`, 'rose');
-                    clearActiveSignal();
-                    return;
-                }
-                if (!pos.tp1Hit && price <= pos.tp1) {
-                    pos.tp1Hit = true;
-                    pos.tsl = pos.entry;
-                    updatePriceLines();
-                    speakAndLog(`टारगेट 1 पूरा हो गया है! 50% प्रॉफिट बुक करें।`, 'emerald');
-                    document.getElementById('tsl-status').innerText = `TSL एंट्री ($${pos.entry.toFixed(2)}) पर शिफ्ट`;
-                }
-                if (pos.tp1Hit && price < pos.tp1) {
-                    const newTsl = price + (pos.entry * 0.0015);
-                    if (newTsl < pos.tsl) {
-                        pos.tsl = newTsl;
-                        updatePriceLines();
-                        document.getElementById('tsl-status').innerText = `लाइव ट्रेलिंग SL: $${pos.tsl.toFixed(2)}`;
-                    }
-                }
-                if (price <= pos.tp2) {
-                    speakAndLog(`टारगेट 2 पूरा हुआ! पूरा प्रॉफिट बुक करें।`, 'emerald');
-                    clearActiveSignal();
-                    return;
-                }
-            }
-        }
-
-        function triggerNewSignal(type) {
-            const box = document.getElementById('signal-box');
-            const title = document.getElementById('signal-title');
-            const pos = activePosition;
-
-            if (type === 'BUY') {
-                box.className = "card p-3.5 text-center border-2 border-emerald-500 pulse-buy";
-                title.className = "text-xl font-black text-emerald-400";
-                title.innerText = "बाय (BUY) एंट्री पक्की";
-            } else {
-                box.className = "card p-3.5 text-center border-2 border-rose-500 pulse-sell";
-                title.className = "text-xl font-black text-rose-400";
-                title.innerText = "सेल (SELL) एंट्री पक्की";
-            }
-
-            document.getElementById('val-entry').innerText = `$${pos.entry.toFixed(2)}`;
-            document.getElementById('val-sl').innerText = `$${pos.sl.toFixed(2)}`;
-            document.getElementById('val-tp1').innerText = `$${pos.tp1.toFixed(2)}`;
-            document.getElementById('val-tp2').innerText = `$${pos.tp2.toFixed(2)}`;
-
-            updatePriceLines();
-            speakAndLog(`नया ${type} सिग्नल मिला है $${pos.entry.toFixed(2)} पर।`, 'blue');
-        }
-
-        function clearActiveSignal() {
-            activePosition = null;
-            clearPriceLines();
-            const box = document.getElementById('signal-box');
-            box.className = "card p-3.5 text-center border-2 border-gray-800";
-            document.getElementById('signal-title').className = "text-xl font-black text-gray-400";
-            document.getElementById('signal-title').innerText = "मार्केट स्कैन हो रहा है...";
-            
-            document.getElementById('val-entry').innerText = "-";
-            document.getElementById('val-sl').innerText = "-";
-            document.getElementById('val-tp1').innerText = "-";
-            document.getElementById('val-tp2').innerText = "-";
-            document.getElementById('tsl-status').innerText = "सुरक्षा के लिए SL फिक्स्ड है।";
-        }
-
-        function updatePriceLines() {
-            clearPriceLines();
-            if (!activePosition) return;
-
-            const pos = activePosition;
-            priceLines.push(candlestickSeries.createPriceLine({ price: pos.entry, color: '#3b82f6', lineWidth: 2, title: 'ENTRY' }));
-            priceLines.push(candlestickSeries.createPriceLine({ price: pos.tsl, color: '#f97316', lineWidth: 2, title: 'TRAILING SL' }));
-            priceLines.push(candlestickSeries.createPriceLine({ price: pos.tp1, color: '#10b981', lineWidth: 1, title: 'TP1 (50%)' }));
-            priceLines.push(candlestickSeries.createPriceLine({ price: pos.tp2, color: '#059669', lineWidth: 2, title: 'TP2 (FULL)' }));
-        }
-
-        function clearPriceLines() {
-            priceLines.forEach(line => candlestickSeries.removePriceLine(line));
-            priceLines = [];
-        }
-
-        function speakAndLog(msg, color) {
-            if (voiceEnabled && 'speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const utter = new SpeechSynthesisUtterance(msg);
-                utter.lang = 'hi-IN';
-                window.speechSynthesis.speak(utter);
-            }
-
-            const logBox = document.getElementById('commentary-log');
-            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            const item = document.createElement('div');
-            item.className = `bg-gray-900 p-2 rounded border-l-2 border-${color}-500 text-gray-200 text-xs`;
-            item.innerHTML = `<span class="text-[10px] text-gray-500 font-mono">[${time}]</span> ${msg}`;
-            logBox.prepend(item);
-        }
-
-        function connectWebSocket() {
-            if (ws) ws.close();
-
-            const streamName = `${currentSymbol.toLowerCase()}@kline_${currentTimeframe}`;
-            ws = new WebSocket(`wss://stream.binance.com:9443/ws/${streamName}`);
-
-            ws.onmessage = (event) => {
-                const message = JSON.parse(event.data);
-                if (message.e === 'kline') {
-                    const k = message.k;
-                    const candle = {
-                        time: k.t / 1000,
-                        open: parseFloat(k.o),
-                        high: parseFloat(k.h),
-                        low: parseFloat(k.l),
-                        close: parseFloat(k.c)
-                    };
-
-                    const priceEl = document.getElementById('live-price');
-                    const lastClose = candles.length > 0 ? candles[candles.length - 1].close : candle.close;
-                    priceEl.innerText = `$${candle.close.toFixed(2)}`;
-                    priceEl.className = `text-xl font-extrabold ${candle.close >= lastClose ? 'text-emerald-400' : 'text-rose-400'}`;
-
-                    if (candles.length > 0 && candles[candles.length - 1].time === candle.time) {
-                        candles[candles.length - 1] = candle;
-                    } else {
-                        candles.push(candle);
-                    }
-
-                    candlestickSeries.update(candle);
-                    calculateIndicators();
-                }
-            };
-        }
-
-        function toggleVoice() {
-            voiceEnabled = !voiceEnabled;
-            const btn = document.getElementById('voice-btn');
-            const txt = document.getElementById('voice-txt');
-            if (voiceEnabled) {
-                btn.className = "bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded text-xs font-bold flex items-center gap-2 transition";
-                txt.innerText = "हिंदी वॉयस चालू है";
-                speakAndLog("ऑडियो कमेंट्री चालू हो गई है।", "emerald");
-            } else {
-                btn.className = "bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded text-xs font-bold flex items-center gap-2 transition";
-                txt.innerText = "हिंदी आवाज़ चालू करें";
-            }
-        }
-
-        document.getElementById('symbol-select').addEventListener('change', (e) => {
-            currentSymbol = e.target.value;
-            document.getElementById('chart-pair').innerText = currentSymbol.replace('USDT', '/USDT');
-            clearActiveSignal();
-            fetchHistory().then(connectWebSocket);
-        });
-
-        window.onload = () => {
-            initChart();
-            fetchHistory().then(connectWebSocket);
-        };
-    </script>
-</body>
-</html>
+            // High Probability Entry Filters (Anti-Loss)
+            const isBullish = ema9[len] > ema21[len] && ema9[len - 1] <= ema21[len - 1] && rsi > 50
