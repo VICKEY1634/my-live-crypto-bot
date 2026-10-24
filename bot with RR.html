@@ -27,7 +27,7 @@
                     Gold & Crypto Multi-Asset Scalper
                     <span id="market-status" class="text-xs px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">● 24x7 LIVE</span>
                 </h1>
-                <p class="text-xs text-gray-400">Auto-Scale Price Chart • Persistent Trades • Hindi Voice Guidance</p>
+                <p class="text-xs text-gray-400">English Interface • Hindi Voice Alerts • Auto Price Scaling</p>
             </div>
         </div>
 
@@ -103,11 +103,11 @@
 
             <div class="card p-3 flex-grow flex flex-col">
                 <h3 class="text-xs font-bold text-gray-400 uppercase mb-2 flex items-center gap-2">
-                    <i class="fa-solid fa-bullhorn text-amber-400"></i> Live Hindi Speech Commentary
+                    <i class="fa-solid fa-bullhorn text-amber-400"></i> Hindi Audio Commentary
                 </h3>
                 <div id="commentary-log" class="flex-grow overflow-y-auto space-y-2 text-xs max-h-[250px] pr-1">
                     <div class="bg-gray-900 p-2 rounded border-l-2 border-blue-500 text-gray-400">
-                        🤖 Bot connected. Auto Price Auto-Scale active.
+                        🤖 बोट गोल्ड और क्रिप्टो के लाइव फीड से कनेक्ट हो गया है।
                     </div>
                 </div>
             </div>
@@ -124,7 +124,6 @@
         let candles = [];
         let priceLines = [];
 
-        // Global position tracker across all assets
         let positionsState = {
             "PAXGUSDT": null,
             "BTCUSDT": null,
@@ -172,7 +171,6 @@
 
                 candlestickSeries.setData(candles);
                 
-                // AUTO SCALE & FIT CHART TO CURRENT PAIR PRICE (No manual scrolling needed)
                 chart.priceScale('right').applyOptions({ autoScale: true });
                 chart.timeScale().fitContent();
 
@@ -320,7 +318,7 @@
             
             if (pos.type === 'BUY') {
                 if (price <= pos.tsl) {
-                    speakAndLog(`स्टॉप लॉस हिट हो गया है ${assetName} पर $${price.toFixed(2)} पर। ट्रेड समाप्त।`, 'rose');
+                    speakAndLog(`स्टॉप लॉस हिट हो गया है ${assetName} पर ${price.toFixed(2)} पर। ट्रेड समाप्त।`, 'rose');
                     clearActiveSignal();
                     return;
                 }
@@ -328,7 +326,7 @@
                     pos.tp1Hit = true;
                     pos.tsl = pos.entry;
                     updatePriceLines();
-                    speakAndLog(`टारगेट 1 पूरा हो गया है! 50% प्रॉफिट बुक करें और स्टॉप लॉस को एंट्री प्राइस पर लाएं।`, 'emerald');
+                    speakAndLog(`टारगेट 1 पूरा हो गया है! पचास परसेंट प्रॉफिट बुक करें और स्टॉप लॉस को एंट्री प्राइस पर लाएं।`, 'emerald');
                     document.getElementById('tsl-status').innerText = `TSL moved to Entry ($${pos.entry.toFixed(2)}) - Risk-Free!`;
                 }
                 if (pos.tp1Hit && price > pos.tp1) {
@@ -346,7 +344,7 @@
                 }
             } else if (pos.type === 'SELL') {
                 if (price >= pos.tsl) {
-                    speakAndLog(`स्टॉप लॉस हिट हो गया है ${assetName} पर $${price.toFixed(2)} पर। ट्रेड समाप्त।`, 'rose');
+                    speakAndLog(`स्टॉप लॉस हिट हो गया है ${assetName} पर ${price.toFixed(2)} पर। ट्रेड समाप्त।`, 'rose');
                     clearActiveSignal();
                     return;
                 }
@@ -354,7 +352,7 @@
                     pos.tp1Hit = true;
                     pos.tsl = pos.entry;
                     updatePriceLines();
-                    speakAndLog(`टारगेट 1 पूरा हो गया है! 50% प्रॉफिट बुक करें और स्टॉप लॉस को एंट्री प्राइस पर लाएं।`, 'emerald');
+                    speakAndLog(`टारगेट 1 पूरा हो गया है! पचास परसेंट प्रॉफिट बुक करें और स्टॉप लॉस को एंट्री प्राइस पर लाएं।`, 'emerald');
                     document.getElementById('tsl-status').innerText = `TSL moved to Entry ($${pos.entry.toFixed(2)}) - Risk-Free!`;
                 }
                 if (pos.tp1Hit && price < pos.tp1) {
@@ -461,7 +459,7 @@
             if (voiceEnabled && 'speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 const utter = new SpeechSynthesisUtterance(msg);
-                utter.lang = 'hi-IN';
+                utter.lang = 'hi-IN'; // Locked to Pure Hindi Speech
                 window.speechSynthesis.speak(utter);
             }
 
@@ -515,7 +513,7 @@
             if (voiceEnabled) {
                 btn.className = "bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded text-xs font-bold flex items-center gap-2 transition";
                 txt.innerText = "Hindi Speech Enabled";
-                speakAndLog("हिंदी वॉयस अलर्ट्स चालू कर दिए गए हैं।", "emerald");
+                speakAndLog("हिंदी वॉयस कमेंट्री चालू कर दी गई है।", "emerald");
             } else {
                 btn.className = "bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded text-xs font-bold flex items-center gap-2 transition";
                 txt.innerText = "Enable Hindi Speech";
